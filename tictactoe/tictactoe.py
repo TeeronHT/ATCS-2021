@@ -6,11 +6,10 @@ A program allowing two players to play tic tac toe against each other.
 Base of a later program where the user will play against AIs of varying
 strength.
 
+I hope you have/had (based on when you review this) a very restful Ski Week!
 """
-
-# I hope you have/had (based on when you review this) a very restful Ski Week!
-# I changed the arguments for the take_turn method
 import random
+import time
 
 
 class TicTacToe:
@@ -81,14 +80,17 @@ class TicTacToe:
         if player == "X":
             self.take_manual_turn(player)
         elif (game_mode == "C"):
-            self.take_minimax_turn(player, depth)
+            self.take_minimax_alpha_beta_turn(player, depth)
         elif (game_mode == "F"):
             self.take_manual_turn("O")
 
     # Wrapper function of the minimax AI.
     def take_minimax_turn(self, player, depth):
+        start = time.time()
         score, row, col = self.minimax(player, depth)
-        #if (self.is_valid_move(row, col)):
+        end = time.time()
+        time_taken = round((end - start), 5)
+        print("This turn took about " + str(time_taken) + " seconds")
         self.place_player(player, row, col)
 
     # Implementation of the minimax AI.
@@ -96,7 +98,7 @@ class TicTacToe:
         # Used you pseudo-code to write the minimax function
         # I was writing a different version of it, without using you
         # structure as much but I'm sick so I couldn't really debug it
-        # and just decided to take the easy route. Sorry
+        # and just decided to take the easy route. Sorry.
         if (self.check_win("O")):
             return 10, None, None
         elif (self.check_win("X")):
@@ -157,6 +159,57 @@ class TicTacToe:
         return score, row, col
         '''
 
+    # Wrapper function of the minimax Alpha/Beta version
+    def take_minimax_alpha_beta_turn(self, player, depth):
+        start = time.time()
+        score, row, col = self.minimax_alpha_beta(player, depth, -1000, 1000)
+        end = time.time()
+        time_taken = round((end - start), 5)
+        print("This turn took about " + str(time_taken) + " seconds")
+        self.place_player(player, row, col)
+
+    # Implementation of the minimax Alpha/Beta version
+    def minimax_alpha_beta(self, player, depth, alpha, beta):
+        if (self.check_win("O")):
+            return 10, None, None
+        elif (self.check_win("X")):
+            return -10, None, None
+        elif(self.check_tie() or depth == 0):
+            return 0, None, None
+
+        opt_row, opt_col = -1, -1
+        if player == "O":
+            best = -10
+            for row in range(len(self.board)):
+                for col in range(len(self.board[0])):
+                    if (self.board[row][col] == "-"):
+                        self.place_player(player, row, col)
+                        score = self.minimax_alpha_beta("X", depth - 1, alpha, beta)[0]
+                        self.place_player("-", row, col)
+                        if (score > alpha):
+                            alpha = score
+                        if (best < score):
+                            best, opt_row, opt_col = score, row, col
+                        if (beta <= alpha):
+                            return best, opt_row, opt_col
+            return best, opt_row, opt_col
+
+        if player == "X":
+            worst = 10
+            for row in range(len(self.board)):
+                for col in range(len(self.board[0])):
+                    if (self.board[row][col] == "-"):
+                        self.place_player(player, row, col)
+                        score = self.minimax_alpha_beta("O", depth - 1, alpha, beta)[0]
+                        self.place_player("-", row, col)
+                        if (score < beta):
+                            beta = score
+                        if (worst > score):
+                            worst, opt_row, opt_col = score, row, col
+                        if (beta <= alpha):
+                            return worst, opt_row, opt_col
+            return worst, opt_row, opt_col
+
     # Checks to see if there are three in a row in a column.
     def check_col_win(self, player):
         # TODO: Check col win
@@ -207,6 +260,7 @@ class TicTacToe:
         # TODO: Play game
         game = True
         player = "X"
+        depth = 0
         mode = self.print_instructions()
 
         # The line below is stupid because at any depth below 6
@@ -221,6 +275,7 @@ class TicTacToe:
             print("Level of AI: " + str(depth - 3))
 
         self.print_board()
+
         while game:
             self.take_turn(player, mode, depth)
             if self.check_win(player):
